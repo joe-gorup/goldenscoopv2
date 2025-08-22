@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, CheckCircle, AlertCircle, Clock, MessageSquare, Save, ChevronDown, ChevronUp, User, Phone, Heart, Brain, Shield, Zap, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Target, CheckCircle, AlertCircle, Clock, MessageSquare, Save, ChevronDown, ChevronUp, User, Phone, Heart, Brain, Shield, Zap, AlertTriangle, ChevronRight, FileText } from 'lucide-react';
 import { useData, Employee } from '../contexts/DataContext';
 
 // Move OutcomeSelector outside the main component to prevent recreation on every render
@@ -74,11 +74,13 @@ interface EmployeeProgressProps {
 }
 
 export default function EmployeeProgress({ employee, shiftId, onViewProfile }: EmployeeProgressProps) {
-  const { developmentGoals, stepProgress, recordStepProgress } = useData();
+  const { developmentGoals, stepProgress, recordStepProgress, shiftSummaries, saveShiftSummary } = useData();
   const [outcomes, setOutcomes] = useState<Record<string, { outcome: 'correct' | 'verbal_prompt' | 'na'; notes: string }>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [showNotes, setShowNotes] = useState<Record<string, boolean>>({});
   const [showSupportDetails, setShowSupportDetails] = useState(false);
+  const [shiftSummary, setShiftSummary] = useState('');
+  const [summaryLoading, setSummaryLoading] = useState(false);
   
   const employeeGoals = developmentGoals.filter(goal => 
     goal.employeeId === employee.id && goal.status === 'active'
@@ -107,6 +109,13 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
     p.shiftRosterId === shiftId
   );
 
+  // Get existing shift summary
+  const existingSummary = shiftSummaries.find(s => 
+    s.employeeId === employee.id && 
+    s.shiftRosterId === shiftId && 
+    s.date === today
+  );
+
   useEffect(() => {
     // Initialize outcomes with existing progress for today
     const initialOutcomes: Record<string, { outcome: 'correct' | 'verbal_prompt' | 'na'; notes: string }> = {};
@@ -119,6 +128,13 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
     });
     setOutcomes(initialOutcomes);
   }, [todayProgress]);
+
+  useEffect(() => {
+    // Initialize shift summary with existing data
+    if (existingSummary) {
+      setShiftSummary(existingSummary.summary);
+    }
+  }, [existingSummary]);
 
   const handleOutcomeChange = async (goalId: string, stepId: string, outcome: 'correct' | 'verbal_prompt' | 'na') => {
     const key = stepId;
@@ -190,6 +206,20 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
       console.error('Error saving notes:', error);
     } finally {
       setSaving(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
+  const handleSummaryChange = async (summary: string) => {
+    setShiftSummary(summary);
+    
+    // Save summary immediately
+    setSummaryLoading(true);
+    try {
+      saveShiftSummary(employee.id, shiftId, summary);
+    } catch (error) {
+      console.error('Error saving shift summary:', error);
+    } finally {
+      setSummaryLoading(false);
     }
   };
 
@@ -336,6 +366,68 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
         )}
       </div>
 
+      {/* Shift Summary */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <FileText className="h-5 w-5 text-green-500" />
+              <h2 className="text-lg font-semibold text-gray-900">Shift Summary</h2>
+            </div>
+            {summaryLoading && (
+              <div className="flex items-center space-x-2 text-blue-600">
+                <Save className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Saving...</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="shift-summary" className="block text-sm font-medium text-gray-700 mb-2">
+                Overall Performance Summary
+              </label>
+              <p className="text-sm text-gray-600 mb-3">
+                Provide an overall summary of {employee.name.split(' ')[0]}'s performance during this shift, including strengths, areas for improvement, and any notable observations.
+              </p>
+              <textarea
+                id="shift-summary"
+                value={shiftSummary}
+                onChange={(e) => handleSummaryChange(e.target.value)}
+                disabled={summaryLoading}
+                placeholder={`Write a summary of ${employee.name.split(' ')[0]}'s performance today...
+
+Examples:
+• Great job greeting customers with enthusiasm today
+• Showed improvement in remembering ice cream flavors
+• Needed reminders for cleaning procedures but followed through well
+• Worked well with team members during busy periods`}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:opacity-50 disabled:cursor-not-allowed resize-none"
+                rows={8}
+              />
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-2">
+                <div className="h-5 w-5 rounded-full bg-blue-600 flex items-center justify-center mt-0.5">
+                  <span className="text-white text-xs font-bold">i</span>
+                </div>
+                <div className="text-sm text-blue-700">
+                  <p className="font-medium mb-1">Tips for writing effective summaries:</p>
+                  <ul className="list-disc list-inside space-y-1 text-blue-600">
+                    <li>Focus on specific behaviors and achievements</li>
+                    <li>Include both strengths and areas for growth</li>
+                    <li>Note any support strategies that worked well</li>
+                    <li>Mention interactions with customers and team members</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Development Goals */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="border-b border-gray-200 px-6 py-4">

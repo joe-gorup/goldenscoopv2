@@ -61,6 +61,16 @@ export interface StepProgress {
   notes?: string;
 }
 
+export interface ShiftSummary {
+  id: string;
+  employeeId: string;
+  shiftRosterId: string;
+  date: string;
+  summary: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface GoalTemplate {
   id: string;
   name: string;
@@ -82,11 +92,13 @@ interface DataContextType {
   developmentGoals: DevelopmentGoal[];
   goalTemplates: GoalTemplate[];
   stepProgress: StepProgress[];
+  shiftSummaries: ShiftSummary[];
   addEmployee: (employee: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateEmployee: (id: string, updates: Partial<Employee>) => void;
   createShift: (employeeIds: string[]) => void;
   endShift: () => void;
   recordStepProgress: (progress: Omit<StepProgress, 'id' | 'date'>) => void;
+  saveShiftSummary: (employeeId: string, shiftId: string, summary: string) => void;
   createGoalFromTemplate: (templateId: string, employeeId: string) => void;
   addGoalTemplate: (template: Omit<GoalTemplate, 'id'>) => void;
   updateGoal: (goalId: string, updates: Partial<DevelopmentGoal>) => void;
@@ -101,6 +113,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [developmentGoals, setDevelopmentGoals] = useState<DevelopmentGoal[]>([]);
   const [goalTemplates, setGoalTemplates] = useState<GoalTemplate[]>([]);
   const [stepProgress, setStepProgress] = useState<StepProgress[]>([]);
+  const [shiftSummaries, setShiftSummaries] = useState<ShiftSummary[]>([]);
 
   useEffect(() => {
     // Initialize with mock data
@@ -412,6 +425,36 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     updateGoalProgress(progress.developmentGoalId, progress.employeeId);
   };
 
+  const saveShiftSummary = (employeeId: string, shiftId: string, summary: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const existingSummary = shiftSummaries.find(s => 
+      s.employeeId === employeeId && 
+      s.shiftRosterId === shiftId && 
+      s.date === today
+    );
+
+    if (existingSummary) {
+      // Update existing summary
+      setShiftSummaries(prev => prev.map(s => 
+        s.id === existingSummary.id 
+          ? { ...s, summary, updatedAt: new Date().toISOString() }
+          : s
+      ));
+    } else {
+      // Create new summary
+      const newSummary: ShiftSummary = {
+        id: Date.now().toString(),
+        employeeId,
+        shiftRosterId: shiftId,
+        date: today,
+        summary,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      setShiftSummaries(prev => [...prev, newSummary]);
+    }
+  };
+
   const updateGoalProgress = (goalId: string, employeeId: string) => {
     const today = new Date().toISOString().split('T')[0];
     const todayProgress = stepProgress.filter(p => 
@@ -500,11 +543,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       developmentGoals,
       goalTemplates,
       stepProgress,
+      shiftSummaries,
       addEmployee,
       updateEmployee,
       createShift,
       endShift,
       recordStepProgress,
+      saveShiftSummary,
       createGoalFromTemplate,
       addGoalTemplate,
       updateGoal,
