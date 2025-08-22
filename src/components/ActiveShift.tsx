@@ -3,6 +3,7 @@ import { Calendar, Play, Square, Users, Clock, ChevronLeft, ChevronRight, CheckC
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import EmployeeProgress from './EmployeeProgress';
+import EmployeeDetail from './EmployeeDetail';
 
 export default function ActiveShift() {
   const { employees, activeShift, createShift, endShift, developmentGoals } = useData();
@@ -12,6 +13,7 @@ export default function ActiveShift() {
   const [currentEmployeeIndex, setCurrentEmployeeIndex] = useState(0);
   const [showCreateShift, setShowCreateShift] = useState(!activeShift);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewingEmployeeProfile, setViewingEmployeeProfile] = useState<string | null>(null);
 
   const activeEmployees = employees.filter(emp => emp.isActive);
   const filteredEmployees = activeEmployees.filter(employee =>
@@ -62,6 +64,25 @@ export default function ActiveShift() {
     );
   };
 
+  const handleViewProfile = () => {
+    if (currentEmployee) {
+      setViewingEmployeeProfile(currentEmployee.id);
+    }
+  };
+
+  const handleCloseProfile = () => {
+    setViewingEmployeeProfile(null);
+  };
+
+  // Show employee profile if viewing
+  if (viewingEmployeeProfile) {
+    return (
+      <EmployeeDetail 
+        employeeId={viewingEmployeeProfile} 
+        onClose={handleCloseProfile}
+      />
+    );
+  }
   if (showCreateShift || !activeShift) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
@@ -374,6 +395,7 @@ export default function ActiveShift() {
             <EmployeeProgress 
               employee={currentEmployee}
               shiftId={activeShift.id}
+              onViewProfile={handleViewProfile}
             />
           </div>
         )}

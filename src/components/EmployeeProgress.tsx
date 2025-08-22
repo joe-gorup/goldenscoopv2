@@ -70,9 +70,10 @@ const OutcomeSelector = ({
 interface EmployeeProgressProps {
   employee: Employee;
   shiftId: string;
+  onViewProfile?: () => void;
 }
 
-export default function EmployeeProgress({ employee, shiftId }: EmployeeProgressProps) {
+export default function EmployeeProgress({ employee, shiftId, onViewProfile }: EmployeeProgressProps) {
   const { developmentGoals, stepProgress, recordStepProgress } = useData();
   const [outcomes, setOutcomes] = useState<Record<string, { outcome: 'correct' | 'verbal_prompt' | 'na'; notes: string }>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
@@ -325,7 +326,10 @@ export default function EmployeeProgress({ employee, shiftId }: EmployeeProgress
 
               {/* View Full Profile Button - spans all columns */}
               <div className="lg:col-span-3 pt-4">
-                <button className="flex items-center space-x-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+                <button 
+                  onClick={onViewProfile}
+                  className="flex items-center space-x-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >
                   <User className="h-4 w-4" />
                   <span className="font-medium">View Full Profile</span>
                 </button>
