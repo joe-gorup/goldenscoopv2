@@ -175,25 +175,22 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
       }
     }));
 
-    // Debounced save for notes
-    clearTimeout((window as any)[`notesTimeout_${key}`]);
-    (window as any)[`notesTimeout_${key}`] = setTimeout(async () => {
-      setSaving(prev => ({ ...prev, [key]: true }));
-      try {
-        recordStepProgress({
-          developmentGoalId: goalId,
-          goalStepId: stepId,
-          employeeId: employee.id,
-          shiftRosterId: shiftId,
-          outcome: outcomes[key]?.outcome || 'na',
-          notes
-        });
-      } catch (error) {
-        console.error('Error saving notes:', error);
-      } finally {
-        setSaving(prev => ({ ...prev, [key]: false }));
-      }
-    }, 1000);
+    // Save notes immediately without debouncing to prevent loss
+    setSaving(prev => ({ ...prev, [key]: true }));
+    try {
+      recordStepProgress({
+        developmentGoalId: goalId,
+        goalStepId: stepId,
+        employeeId: employee.id,
+        shiftRosterId: shiftId,
+        outcome: outcomes[key]?.outcome || 'na',
+        notes
+      });
+    } catch (error) {
+      console.error('Error saving notes:', error);
+    } finally {
+      setSaving(prev => ({ ...prev, [key]: false }));
+    }
   };
 
   const getGoalProgress = (goal: any) => {
