@@ -146,19 +146,27 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
   const handleOutcomeChange = async (goalId: string, stepId: string, outcome: 'correct' | 'verbal_prompt' | 'na') => {
     const key = stepId;
     
+   console.log('handleOutcomeChange called:', { goalId, stepId, outcome, key });
+   
     // Auto-open notes section for verbal prompts
     if (outcome === 'verbal_prompt') {
       setShowNotes(prev => ({ ...prev, [key]: true }));
+   } else if (outcome === 'na') {
+     // Close notes section for N/A
+     setShowNotes(prev => ({ ...prev, [key]: false }));
     }
     
     // Update local state immediately for responsive UI
+   const newOutcome = {
+     outcome, 
+     notes: outcome === 'na' ? '' : (outcomes[key]?.notes || '')
+   };
+   
     setOutcomes(prev => ({
-      ...prev,
-      [key]: { 
-        outcome, 
-        notes: prev[key]?.notes || '' 
+     [key]: newOutcome
       }
     }));
+   console.log('Updated outcomes state:', { [key]: newOutcome });
 
     // Save to data context
     setSaving(prev => ({ ...prev, [key]: true }));
@@ -169,8 +177,9 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
         employeeId: employee.id,
         shiftRosterId: shiftId,
         outcome,
-        notes: outcomes[key]?.notes || ''
+       notes: outcome === 'na' ? '' : (outcomes[key]?.notes || '')
       });
+     console.log('Successfully recorded step progress');
     } catch (error) {
       console.error('Error recording step progress:', error);
       // Revert the change if save failed
