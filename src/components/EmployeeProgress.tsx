@@ -163,9 +163,9 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
    };
    
     setOutcomes(prev => ({
+      ...prev,
      [key]: newOutcome
-      }
-    }));
+      }));
    console.log('Updated outcomes state:', { [key]: newOutcome });
 
     // Save to data context
