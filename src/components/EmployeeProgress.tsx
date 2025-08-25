@@ -43,6 +43,12 @@ const OutcomeSelector = ({
     }
   ];
 
+  const handleClick = (optionValue: 'correct' | 'verbal_prompt' | 'na') => {
+    console.log('OutcomeSelector clicked:', optionValue, 'for step:', stepId);
+    if (!disabled && !saving) {
+      onChange(optionValue);
+    }
+  };
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((option) => (
@@ -50,9 +56,10 @@ const OutcomeSelector = ({
           key={option.value}
           type="button"
           disabled={disabled || saving}
-          onClick={() => {
-            console.log('Button clicked:', option.value);
-            onChange(option.value);
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleClick(option.value);
           }}
           className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
             value === option.value
