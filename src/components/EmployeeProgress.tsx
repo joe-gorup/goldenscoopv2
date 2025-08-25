@@ -157,16 +157,16 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
     }
     
     // Update local state immediately for responsive UI
-    const newOutcome = {
-      outcome, 
-      notes: outcome === 'na' ? '' : (outcomes[key]?.notes || '')
-    };
-    
+   const newOutcome = {
+     outcome, 
+     notes: outcome === 'na' ? '' : (outcomes[key]?.notes || '')
+   };
+   
     setOutcomes(prev => ({
       ...prev,
-      [key]: newOutcome
-    }));
-    console.log('Updated outcomes state:', { [key]: newOutcome });
+     [key]: newOutcome
+      }));
+   console.log('Updated outcomes state:', { [key]: newOutcome });
 
     // Save to data context
     setSaving(prev => ({ ...prev, [key]: true }));
@@ -177,9 +177,9 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
         employeeId: employee.id,
         shiftRosterId: shiftId,
         outcome,
-        notes: outcome === 'na' ? '' : (outcomes[key]?.notes || '')
+       notes: outcome === 'na' ? '' : (outcomes[key]?.notes || '')
       });
-      console.log('Successfully recorded step progress');
+     console.log('Successfully recorded step progress');
     } catch (error) {
       console.error('Error recording step progress:', error);
       // Revert the change if save failed
