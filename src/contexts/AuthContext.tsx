@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('users')
         .select('*')
         .eq('id', authUser.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error loading user profile:', error);
@@ -76,6 +76,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isActive: userProfile.is_active
         });
         setIsAuthenticated(true);
+      } else {
+        console.warn('No user profile found for authenticated user:', authUser.id);
+        // User is authenticated but has no profile in users table
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
