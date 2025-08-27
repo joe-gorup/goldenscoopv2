@@ -285,9 +285,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         .eq('is_active', true)
         .single();
 
-      if (shiftError && shiftError.code !== 'PGRST116') {
-        throw shiftError;
-      }
+      if (shiftError) {
+        if (shiftError.code !== 'PGRST116') {
+          throw shiftError;
+        }
+        // PGRST116 means no rows found, which is expected when no shift is active
+        setActiveShift(null);
+      } else if (activeShiftData) {
 
       if (activeShiftData) {
         const transformedShift: ShiftRoster = {
