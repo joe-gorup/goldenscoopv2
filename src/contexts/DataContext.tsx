@@ -138,15 +138,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
-      // Debug logging to check environment variables
-      console.log('Environment check:', {
-        supabaseUrl: supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'undefined',
-        supabaseKey: supabaseKey ? `${supabaseKey.substring(0, 20)}...` : 'undefined',
-        isPlaceholderUrl: supabaseUrl === 'https://placeholder.supabase.co',
-        isPlaceholderKey: supabaseKey === 'placeholder-key',
-        hasValidConfig: !!(supabaseUrl && supabaseKey && supabaseUrl !== 'https://placeholder.supabase.co' && supabaseKey !== 'placeholder-key')
-      });
-      
       if (!supabaseUrl || !supabaseKey || supabaseUrl === 'https://placeholder.supabase.co' || supabaseKey === 'placeholder-key') {
         console.warn('Supabase not configured properly. Using demo data.');
         loadDemoData();
