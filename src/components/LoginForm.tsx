@@ -117,19 +117,10 @@ export default function LoginForm() {
             <div>
               <strong>Manager:</strong> manager@goldenscoop.com / password
             </div>
-            <div className="mt-2 text-gray-500">
-              <strong>Note:</strong> These users must exist in your Supabase project. Click "Connect to Supabase" in the top right, then create these users in the Authentication &gt; Users section.
+            <div className="mt-2 text-blue-600">
+              <strong>Demo Mode:</strong> The app is running in demo mode with sample data. To use with real Supabase data, click "Connect to Supabase" in the top right and configure your project.
             </div>
           </div>
-          
-          <button
-            onClick={createDemoUsers}
-            disabled={creatingUsers}
-            className="mt-3 w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 focus:ring-4 focus:ring-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-          >
-            <UserPlus className="h-4 w-4" />
-            <span>{creatingUsers ? 'Creating Users...' : 'Create Demo Users'}</span>
-          </button>
         </div>
       </div>
     </div>

@@ -125,12 +125,29 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       
-      // Check if Supabase is properly configured
-      if (!supabase.supabaseUrl || !supabase.supabaseKey) {
-        console.warn('Supabase not configured. Please connect to Supabase first.');
+      // Check if Supabase is properly configured with real values
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+        console.warn('Supabase not configured properly. Using demo data.');
+        loadDemoData();
         setLoading(false);
         return;
       }
+
+      await loadSupabaseData();
+    } catch (error) {
+      console.error('Error loading data:', error);
+      console.warn('Falling back to demo data');
+      loadDemoData();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSupabaseData = async () => {
+    try {
 
       // Load employees
       const { data: employeesData, error: employeesError } = await supabase
@@ -305,10 +322,108 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
 
     } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
+      throw error; // Re-throw to be caught by loadData
     }
+  };
+
+  const loadDemoData = () => {
+    // Load demo employees
+    const demoEmployees: Employee[] = [
+      {
+        id: '1',
+        name: 'Alex Johnson',
+        role: 'Super Scooper',
+        profileImageUrl: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
+        isActive: true,
+        allergies: ['Nuts', 'Dairy'],
+        emergencyContacts: [
+          { name: 'Sarah Johnson', relationship: 'Mother', phone: '555-0123' }
+        ],
+        interestsMotivators: ['Music', 'Art', 'Praise and recognition'],
+        challenges: ['Loud noises', 'Sudden changes'],
+        regulationStrategies: ['5-minute breaks', 'Visual schedules', 'Calm voice'],
+        createdAt: '2024-01-15T00:00:00Z',
+        updatedAt: '2024-01-15T00:00:00Z'
+      },
+      {
+        id: '2',
+        name: 'Emma Davis',
+        role: 'Super Scooper',
+        profileImageUrl: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
+        isActive: true,
+        allergies: [],
+        emergencyContacts: [
+          { name: 'Mike Davis', relationship: 'Father', phone: '555-0456' }
+        ],
+        interestsMotivators: ['Animals', 'Colorful stickers', 'Team activities'],
+        challenges: ['Complex instructions'],
+        regulationStrategies: ['Break tasks into steps', 'Use positive reinforcement'],
+        createdAt: '2024-01-20T00:00:00Z',
+        updatedAt: '2024-01-20T00:00:00Z'
+      }
+    ];
+
+    // Load demo goal templates
+    const demoTemplates: GoalTemplate[] = [
+      {
+        id: '1',
+        name: 'Ice Cream Flavors Knowledge',
+        goalStatement: 'Employee will demonstrate knowledge of all ice cream flavors and their ingredients',
+        defaultMasteryCriteria: '3 consecutive shifts with all required steps Correct',
+        defaultTargetDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: 'active',
+        steps: [
+          {
+            id: '1',
+            stepOrder: 1,
+            stepDescription: 'Name all available ice cream flavors',
+            isRequired: true
+          },
+          {
+            id: '2',
+            stepOrder: 2,
+            stepDescription: 'Identify ingredients in each flavor',
+            isRequired: true
+          }
+        ]
+      }
+    ];
+
+    // Load demo development goals
+    const demoGoals: DevelopmentGoal[] = [
+      {
+        id: '1',
+        employeeId: '1',
+        title: 'Ice Cream Flavors Knowledge',
+        description: 'Learn all ice cream flavors and their ingredients',
+        startDate: '2024-01-15',
+        targetEndDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: 'active',
+        masteryAchieved: false,
+        consecutiveAllCorrect: 1,
+        steps: [
+          {
+            id: '1',
+            stepOrder: 1,
+            stepDescription: 'Name all available ice cream flavors',
+            isRequired: true
+          },
+          {
+            id: '2',
+            stepOrder: 2,
+            stepDescription: 'Identify ingredients in each flavor',
+            isRequired: true
+          }
+        ]
+      }
+    ];
+
+    setEmployees(demoEmployees);
+    setGoalTemplates(demoTemplates);
+    setDevelopmentGoals(demoGoals);
+    setStepProgress([]);
+    setShiftSummaries([]);
+    setActiveShift(null);
   };
 
   const addEmployee = (employeeData: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>) => {
