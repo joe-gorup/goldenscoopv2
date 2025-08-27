@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, AlertCircle } from 'lucide-react';
+import { LogIn, AlertCircle, UserPlus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function LoginForm() {
@@ -7,8 +7,32 @@ export default function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [creatingUsers, setCreatingUsers] = useState(false);
   const { login } = useAuth();
 
+  const createDemoUsers = async () => {
+    setCreatingUsers(true);
+    setError('');
+    
+    try {
+      const response = await fetch('/api/create-demo-users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        setError('Demo users created successfully! You can now log in.');
+      } else {
+        setError('Failed to create demo users. Please check your Supabase setup.');
+      }
+    } catch (err) {
+      setError('Unable to create demo users. Please set up users manually in Supabase.');
+    } finally {
+      setCreatingUsers(false);
+    }
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -17,10 +41,10 @@ export default function LoginForm() {
     try {
       const success = await login(email, password);
       if (!success) {
-        setError('Invalid email or password');
+        setError('Invalid email or password. Make sure demo users are created in Supabase.');
       }
     } catch (err) {
-      setError('Login failed. Please try again.');
+      setError('Login failed. Please ensure Supabase is properly configured and demo users exist.');
     } finally {
       setLoading(false);
     }
@@ -94,9 +118,18 @@ export default function LoginForm() {
               <strong>Manager:</strong> manager@goldenscoop.com / password
             </div>
             <div className="mt-2 text-gray-500">
-              <strong>Note:</strong> You'll need to set up Supabase authentication first. Click "Connect to Supabase" in the top right.
+              <strong>Note:</strong> These users must exist in your Supabase project. Click "Connect to Supabase" in the top right, then create these users in the Authentication > Users section.
             </div>
           </div>
+          
+          <button
+            onClick={createDemoUsers}
+            disabled={creatingUsers}
+            className="mt-3 w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 focus:ring-4 focus:ring-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>{creatingUsers ? 'Creating Users...' : 'Create Demo Users'}</span>
+          </button>
         </div>
       </div>
     </div>
