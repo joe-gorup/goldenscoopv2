@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 export interface Employee {
   id: string;
@@ -114,427 +115,738 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [goalTemplates, setGoalTemplates] = useState<GoalTemplate[]>([]);
   const [stepProgress, setStepProgress] = useState<StepProgress[]>([]);
   const [shiftSummaries, setShiftSummaries] = useState<ShiftSummary[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize with mock data
-    const mockEmployees: Employee[] = [
-      {
-        id: '1',
-        name: 'Sally Martinez',
-        role: 'Super Scooper',
-        profileImageUrl: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-        isActive: true,
-        allergies: ['Tree nuts', 'Shellfish'],
-        emergencyContacts: [
-          { name: 'Maria Martinez', relationship: 'Mother', phone: '(555) 123-4567' },
-          { name: 'Carlos Martinez', relationship: 'Father', phone: '(555) 234-5678' }
-        ],
-        interestsMotivators: ['Pop music', 'High-fives', 'Colorful stickers', 'Compliments on work'],
-        challenges: ['Loud noises from blender', 'Rush periods with long lines', 'Remembering multiple orders'],
-        regulationStrategies: ['Offer 5-minute breaks during busy periods', 'Use visual order cards', 'Speak in calm, quiet voice', 'Give one task at a time'],
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-15'
-      },
-      {
-        id: '2',
-        name: 'Alex Thompson',
-        role: 'Super Scooper',
-        profileImageUrl: 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-        isActive: true,
-        allergies: [],
-        emergencyContacts: [
-          { name: 'Jennifer Thompson', relationship: 'Mother', phone: '(555) 345-6789' }
-        ],
-        interestsMotivators: ['Video games', 'Basketball', 'Earning money', 'Team competitions'],
-        challenges: ['Processing multiple instructions at once', 'Remembering ice cream flavor ingredients'],
-        regulationStrategies: ['Give one instruction at a time', 'Use positive reinforcement', 'Allow extra processing time', 'Practice flavor knowledge during slow periods'],
-        createdAt: '2024-01-10',
-        updatedAt: '2024-01-10'
-      },
-      {
-        id: '3',
-        name: 'Emma Rodriguez',
-        role: 'Super Scooper',
-        profileImageUrl: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-        isActive: true,
-        allergies: ['Latex'],
-        emergencyContacts: [
-          { name: 'Rosa Rodriguez', relationship: 'Grandmother', phone: '(555) 456-7890' },
-          { name: 'Miguel Rodriguez', relationship: 'Uncle', phone: '(555) 567-8901' }
-        ],
-        interestsMotivators: ['Art and drawing', 'Helping customers', 'Learning new skills', 'Praise from managers'],
-        challenges: ['Anxiety with new customers', 'Counting change quickly', 'Working during busy periods'],
-        regulationStrategies: ['Start with familiar customers', 'Use calculator for change', 'Pair with experienced scooper during rush', 'Provide reassurance and encouragement'],
-        createdAt: '2024-02-01',
-        updatedAt: '2024-02-01'
-      },
-      {
-        id: '4',
-        name: 'Jordan Kim',
-        role: 'Super Scooper',
-        profileImageUrl: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-        isActive: true,
-        allergies: ['Dairy', 'Eggs'],
-        emergencyContacts: [
-          { name: 'Susan Kim', relationship: 'Mother', phone: '(555) 678-9012' }
-        ],
-        interestsMotivators: ['K-pop music', 'Social media', 'Making friends', 'Earning independence'],
-        challenges: ['Social anxiety', 'Speaking loudly enough', 'Initiating conversations with customers'],
-        regulationStrategies: ['Practice greetings during training', 'Use scripts for common interactions', 'Start shifts with supportive team members', 'Celebrate small social wins'],
-        createdAt: '2024-01-20',
-        updatedAt: '2024-01-20'
-      },
-      {
-        id: '5',
-        name: 'Marcus Johnson',
-        role: 'Super Scooper',
-        profileImageUrl: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-        isActive: true,
-        allergies: [],
-        emergencyContacts: [
-          { name: 'Denise Johnson', relationship: 'Mother', phone: '(555) 789-0123' },
-          { name: 'Robert Johnson', relationship: 'Father', phone: '(555) 890-1234' }
-        ],
-        interestsMotivators: ['Football', 'Working out', 'Helping others', 'Being recognized as reliable'],
-        challenges: ['Fine motor skills with scooping', 'Patience during slow periods', 'Following detailed cleaning procedures'],
-        regulationStrategies: ['Use larger scoop handles', 'Provide movement breaks', 'Break cleaning tasks into smaller steps', 'Assign physical tasks when possible'],
-        createdAt: '2024-01-05',
-        updatedAt: '2024-01-05'
-      },
-      {
-        id: '6',
-        name: 'Aisha Patel',
-        role: 'Super Scooper',
-        profileImageUrl: 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-        isActive: false,
-        allergies: ['Peanuts'],
-        emergencyContacts: [
-          { name: 'Priya Patel', relationship: 'Sister', phone: '(555) 901-2345' }
-        ],
-        interestsMotivators: ['Reading', 'Animals', 'Quiet environments', 'One-on-one interactions'],
-        challenges: ['Loud environments', 'Multi-tasking', 'Time pressure'],
-        regulationStrategies: ['Assign quieter work stations', 'Focus on one task at a time', 'Provide noise-canceling headphones during breaks'],
-        createdAt: '2024-01-12',
-        updatedAt: '2024-03-01'
-      }
-    ];
-
-    const mockGoalTemplates: GoalTemplate[] = [
-      {
-        id: '1',
-        name: 'Ice Cream Flavors Knowledge',
-        goalStatement: 'Employee will independently state all current ice cream flavors and their mix-in ingredients with 100% accuracy in 3 consecutive shifts to increase customer service skills.',
-        defaultMasteryCriteria: '3 consecutive shifts with all required steps Correct',
-        defaultTargetDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 90 days from now
-        status: 'active',
-        steps: [
-          { id: '1', stepOrder: 1, stepDescription: 'Vanilla — Vanilla ice cream', isRequired: true },
-          { id: '2', stepOrder: 2, stepDescription: 'Charlie\'s Chocolate — Chocolate ice cream (regular)', isRequired: true },
-          { id: '3', stepOrder: 3, stepDescription: 'Chocolate Gold Rush — Chocolate ice cream with golden Oreos', isRequired: true },
-          { id: '4', stepOrder: 4, stepDescription: 'Chocolate No Cow — Dairy-free chocolate; oat and coconut milk; vegan', isRequired: true },
-          { id: '5', stepOrder: 5, stepDescription: 'Cookies and Cream — Vanilla ice cream with Oreos', isRequired: true },
-          { id: '6', stepOrder: 6, stepDescription: 'Cookie Dough — Vanilla ice cream with cookie dough pieces', isRequired: true },
-          { id: '7', stepOrder: 7, stepDescription: 'Coffee — Coffee ice cream', isRequired: true },
-          { id: '8', stepOrder: 8, stepDescription: 'Mint Chocolate Chip — Mint ice cream with chocolate chips', isRequired: true }
-        ]
-      },
-      {
-        id: '2',
-        name: 'Phone Answering Protocol',
-        goalStatement: 'Employee will independently answer the shop phone and answer all common questions asked by customers with 100% accuracy to increase independence in the workplace.',
-        defaultMasteryCriteria: '3 consecutive shifts with all required steps Correct',
-        defaultTargetDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        status: 'active',
-        steps: [
-          { id: '1', stepOrder: 1, stepDescription: 'Picks up the phone', isRequired: true },
-          { id: '2', stepOrder: 2, stepDescription: 'Selects "talk"', isRequired: true },
-          { id: '3', stepOrder: 3, stepDescription: 'Brings the phone to ear', isRequired: true },
-          { id: '4', stepOrder: 4, stepDescription: 'Says greeting: "Thank you for calling The Golden Scoop, this is [name], how can I help you?"', isRequired: true },
-          { id: '5', stepOrder: 5, stepDescription: 'Answers the question or states "Let me grab my manager for you"', isRequired: true },
-          { id: '6', stepOrder: 6, stepDescription: 'Hands the phone to a manager (if applicable)', isRequired: false },
-          { id: '7', stepOrder: 7, stepDescription: 'Says "Thank you, have a nice day, bye"', isRequired: true },
-          { id: '8', stepOrder: 8, stepDescription: 'Selects "end" on the phone', isRequired: true },
-          { id: '9', stepOrder: 9, stepDescription: 'Puts the phone on the charger', isRequired: true }
-        ]
-      }
-    ];
-
-    const mockDevelopmentGoals: DevelopmentGoal[] = [
-      {
-        id: '1',
-        employeeId: '1',
-        title: 'Ice Cream Flavors Knowledge',
-        description: 'Sally will independently state all current ice cream flavors and their mix-in ingredients with 100% accuracy in 3 consecutive shifts to increase customer service skills.',
-        startDate: '2024-12-01',
-        targetEndDate: '2025-03-01',
-        status: 'active',
-        masteryAchieved: false,
-        consecutiveAllCorrect: 1,
-        steps: [
-          { id: '1', stepOrder: 1, stepDescription: 'Vanilla — Vanilla ice cream', isRequired: true },
-          { id: '2', stepOrder: 2, stepDescription: 'Charlie\'s Chocolate — Chocolate ice cream (regular)', isRequired: true },
-          { id: '3', stepOrder: 3, stepDescription: 'Cookies and Cream — Vanilla ice cream with Oreos', isRequired: true },
-          { id: '4', stepOrder: 4, stepDescription: 'Cookie Dough — Vanilla ice cream with cookie dough pieces', isRequired: true }
-        ]
-      },
-      {
-        id: '2',
-        employeeId: '1',
-        title: 'Customer Greeting Skills',
-        description: 'Sally will greet every customer within 30 seconds of entry with appropriate eye contact and friendly demeanor.',
-        startDate: '2024-11-15',
-        targetEndDate: '2025-02-15',
-        status: 'active',
-        masteryAchieved: false,
-        consecutiveAllCorrect: 0,
-        steps: [
-          { id: '5', stepOrder: 1, stepDescription: 'Makes eye contact with customer', isRequired: true },
-          { id: '6', stepOrder: 2, stepDescription: 'Smiles and says "Welcome to The Golden Scoop"', isRequired: true },
-          { id: '7', stepOrder: 3, stepDescription: 'Asks "How can I help you today?"', isRequired: true }
-        ]
-      },
-      {
-        id: '3',
-        employeeId: '2',
-        title: 'Phone Answering Protocol',
-        description: 'Alex will independently answer the shop phone and handle common customer questions with 100% accuracy to increase workplace independence.',
-        startDate: '2024-12-10',
-        targetEndDate: '2025-03-10',
-        status: 'active',
-        masteryAchieved: false,
-        consecutiveAllCorrect: 2,
-        steps: [
-          { id: '8', stepOrder: 1, stepDescription: 'Picks up the phone within 3 rings', isRequired: true },
-          { id: '9', stepOrder: 2, stepDescription: 'Says greeting: "Thank you for calling The Golden Scoop, this is Alex, how can I help you?"', isRequired: true },
-          { id: '10', stepOrder: 3, stepDescription: 'Answers hours question: "We\'re open 11am to 9pm daily"', isRequired: true },
-          { id: '11', stepOrder: 4, stepDescription: 'Answers location question or transfers to manager', isRequired: true },
-          { id: '12', stepOrder: 5, stepDescription: 'Says "Thank you, have a great day" before hanging up', isRequired: true }
-        ]
-      },
-      {
-        id: '4',
-        employeeId: '3',
-        title: 'Cash Register Operation',
-        description: 'Emma will independently operate the cash register for simple transactions with 100% accuracy to build confidence and independence.',
-        startDate: '2024-12-05',
-        targetEndDate: '2025-03-05',
-        status: 'active',
-        masteryAchieved: false,
-        consecutiveAllCorrect: 0,
-        steps: [
-          { id: '13', stepOrder: 1, stepDescription: 'Greets customer and asks for their order', isRequired: true },
-          { id: '14', stepOrder: 2, stepDescription: 'Enters items correctly on register', isRequired: true },
-          { id: '15', stepOrder: 3, stepDescription: 'States total clearly to customer', isRequired: true },
-          { id: '16', stepOrder: 4, stepDescription: 'Processes payment (cash or card)', isRequired: true },
-          { id: '17', stepOrder: 5, stepDescription: 'Gives correct change and receipt', isRequired: true }
-        ]
-      },
-      {
-        id: '5',
-        employeeId: '4',
-        title: 'Customer Interaction Confidence',
-        description: 'Jordan will initiate friendly conversations with customers and speak at appropriate volume to improve social skills and customer service.',
-        startDate: '2024-11-20',
-        targetEndDate: '2025-02-20',
-        status: 'active',
-        masteryAchieved: false,
-        consecutiveAllCorrect: 1,
-        steps: [
-          { id: '18', stepOrder: 1, stepDescription: 'Makes eye contact when greeting customers', isRequired: true },
-          { id: '19', stepOrder: 2, stepDescription: 'Speaks loud enough to be heard clearly', isRequired: true },
-          { id: '20', stepOrder: 3, stepDescription: 'Asks at least one friendly question (weather, day, etc.)', isRequired: false },
-          { id: '21', stepOrder: 4, stepDescription: 'Thanks customer and wishes them well', isRequired: true }
-        ]
-      },
-      {
-        id: '6',
-        employeeId: '5',
-        title: 'Cleaning and Sanitization',
-        description: 'Marcus will complete end-of-shift cleaning checklist independently with 100% accuracy to maintain health standards.',
-        startDate: '2024-12-01',
-        targetEndDate: '2025-03-01',
-        status: 'maintenance',
-        masteryAchieved: true,
-        masteryDate: '2024-12-15',
-        consecutiveAllCorrect: 5,
-        steps: [
-          { id: '22', stepOrder: 1, stepDescription: 'Wipes down all counters with sanitizer', isRequired: true },
-          { id: '23', stepOrder: 2, stepDescription: 'Cleans ice cream scoops and utensils', isRequired: true },
-          { id: '24', stepOrder: 3, stepDescription: 'Sweeps and mops floor areas', isRequired: true },
-          { id: '25', stepOrder: 4, stepDescription: 'Empties trash and replaces liners', isRequired: true },
-          { id: '26', stepOrder: 5, stepDescription: 'Checks and refills napkin/spoon dispensers', isRequired: false }
-        ]
-      }
-    ];
-
-    setEmployees(mockEmployees);
-    setGoalTemplates(mockGoalTemplates);
-    setDevelopmentGoals(mockDevelopmentGoals);
+    loadData();
   }, []);
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Load employees
+      const { data: employeesData, error: employeesError } = await supabase
+        .from('employees')
+        .select('*')
+        .order('name');
+
+      if (employeesError) throw employeesError;
+
+      // Transform database data to match interface
+      const transformedEmployees: Employee[] = employeesData.map(emp => ({
+        id: emp.id,
+        name: emp.name,
+        role: emp.role,
+        profileImageUrl: emp.profile_image_url,
+        isActive: emp.is_active,
+        allergies: emp.allergies || [],
+        emergencyContacts: emp.emergency_contacts || [],
+        interestsMotivators: emp.interests_motivators || [],
+        challenges: emp.challenges || [],
+        regulationStrategies: emp.regulation_strategies || [],
+        createdAt: emp.created_at,
+        updatedAt: emp.updated_at
+      }));
+
+      setEmployees(transformedEmployees);
+
+      // Load goal templates with steps
+      const { data: templatesData, error: templatesError } = await supabase
+        .from('goal_templates')
+        .select(`
+          *,
+          goal_template_steps (
+            id,
+            step_order,
+            step_description,
+            is_required
+          )
+        `)
+        .order('name');
+
+      if (templatesError) throw templatesError;
+
+      const transformedTemplates: GoalTemplate[] = templatesData.map(template => ({
+        id: template.id,
+        name: template.name,
+        goalStatement: template.goal_statement,
+        defaultMasteryCriteria: template.default_mastery_criteria,
+        defaultTargetDate: template.default_target_date,
+        status: template.status,
+        steps: template.goal_template_steps.map((step: any) => ({
+          id: step.id,
+          stepOrder: step.step_order,
+          stepDescription: step.step_description,
+          isRequired: step.is_required
+        }))
+      }));
+
+      setGoalTemplates(transformedTemplates);
+
+      // Load development goals with steps
+      const { data: goalsData, error: goalsError } = await supabase
+        .from('development_goals')
+        .select(`
+          *,
+          goal_steps (
+            id,
+            step_order,
+            step_description,
+            is_required
+          )
+        `)
+        .order('created_at');
+
+      if (goalsError) throw goalsError;
+
+      const transformedGoals: DevelopmentGoal[] = goalsData.map(goal => ({
+        id: goal.id,
+        employeeId: goal.employee_id,
+        title: goal.title,
+        description: goal.description,
+        startDate: goal.start_date,
+        targetEndDate: goal.target_end_date,
+        status: goal.status,
+        masteryAchieved: goal.mastery_achieved,
+        masteryDate: goal.mastery_date,
+        consecutiveAllCorrect: goal.consecutive_all_correct,
+        steps: goal.goal_steps.map((step: any) => ({
+          id: step.id,
+          stepOrder: step.step_order,
+          stepDescription: step.step_description,
+          isRequired: step.is_required
+        }))
+      }));
+
+      setDevelopmentGoals(transformedGoals);
+
+      // Load step progress
+      const { data: progressData, error: progressError } = await supabase
+        .from('step_progress')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (progressError) throw progressError;
+
+      const transformedProgress: StepProgress[] = progressData.map(progress => ({
+        id: progress.id,
+        developmentGoalId: progress.development_goal_id,
+        goalStepId: progress.goal_step_id,
+        employeeId: progress.employee_id,
+        shiftRosterId: progress.shift_roster_id,
+        date: progress.date,
+        outcome: progress.outcome,
+        notes: progress.notes
+      }));
+
+      setStepProgress(transformedProgress);
+
+      // Load shift summaries
+      const { data: summariesData, error: summariesError } = await supabase
+        .from('shift_summaries')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (summariesError) throw summariesError;
+
+      const transformedSummaries: ShiftSummary[] = summariesData.map(summary => ({
+        id: summary.id,
+        employeeId: summary.employee_id,
+        shiftRosterId: summary.shift_roster_id,
+        date: summary.date,
+        summary: summary.summary,
+        createdAt: summary.created_at,
+        updatedAt: summary.updated_at
+      }));
+
+      setShiftSummaries(transformedSummaries);
+
+      // Load active shift
+      const { data: activeShiftData, error: shiftError } = await supabase
+        .from('shift_rosters')
+        .select('*')
+        .eq('is_active', true)
+        .single();
+
+      if (shiftError && shiftError.code !== 'PGRST116') {
+        throw shiftError;
+      }
+
+      if (activeShiftData) {
+        const transformedShift: ShiftRoster = {
+          id: activeShiftData.id,
+          managerId: activeShiftData.manager_id,
+          date: activeShiftData.date,
+          startTime: activeShiftData.start_time,
+          endTime: activeShiftData.end_time,
+          employeeIds: activeShiftData.employee_ids || [],
+          isActive: activeShiftData.is_active
+        };
+        setActiveShift(transformedShift);
+      }
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addEmployee = (employeeData: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newEmployee: Employee = {
-      ...employeeData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+    const addEmployeeAsync = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('employees')
+          .insert({
+            name: employeeData.name,
+            role: employeeData.role,
+            profile_image_url: employeeData.profileImageUrl,
+            is_active: employeeData.isActive,
+            allergies: employeeData.allergies,
+            emergency_contacts: employeeData.emergencyContacts,
+            interests_motivators: employeeData.interestsMotivators,
+            challenges: employeeData.challenges,
+            regulation_strategies: employeeData.regulationStrategies
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const newEmployee: Employee = {
+          id: data.id,
+          name: data.name,
+          role: data.role,
+          profileImageUrl: data.profile_image_url,
+          isActive: data.is_active,
+          allergies: data.allergies || [],
+          emergencyContacts: data.emergency_contacts || [],
+          interestsMotivators: data.interests_motivators || [],
+          challenges: data.challenges || [],
+          regulationStrategies: data.regulation_strategies || [],
+          createdAt: data.created_at,
+          updatedAt: data.updated_at
+        };
+
+        setEmployees(prev => [...prev, newEmployee]);
+      } catch (error) {
+        console.error('Error adding employee:', error);
+      }
     };
-    setEmployees(prev => [...prev, newEmployee]);
+
+    addEmployeeAsync();
   };
 
   const updateEmployee = (id: string, updates: Partial<Employee>) => {
-    setEmployees(prev => prev.map(emp => 
-      emp.id === id 
-        ? { ...emp, ...updates, updatedAt: new Date().toISOString() }
-        : emp
-    ));
+    const updateEmployeeAsync = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('employees')
+          .update({
+            name: updates.name,
+            role: updates.role,
+            profile_image_url: updates.profileImageUrl,
+            is_active: updates.isActive,
+            allergies: updates.allergies,
+            emergency_contacts: updates.emergencyContacts,
+            interests_motivators: updates.interestsMotivators,
+            challenges: updates.challenges,
+            regulation_strategies: updates.regulationStrategies
+          })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setEmployees(prev => prev.map(emp => 
+          emp.id === id 
+            ? {
+                ...emp,
+                name: data.name,
+                role: data.role,
+                profileImageUrl: data.profile_image_url,
+                isActive: data.is_active,
+                allergies: data.allergies || [],
+                emergencyContacts: data.emergency_contacts || [],
+                interestsMotivators: data.interests_motivators || [],
+                challenges: data.challenges || [],
+                regulationStrategies: data.regulation_strategies || [],
+                updatedAt: data.updated_at
+              }
+            : emp
+        ));
+      } catch (error) {
+        console.error('Error updating employee:', error);
+      }
+    };
+
+    updateEmployeeAsync();
   };
 
   const createShift = (employeeIds: string[]) => {
-    const newShift: ShiftRoster = {
-      id: Date.now().toString(),
-      managerId: '1', // Would be current user ID
-      date: new Date().toISOString().split('T')[0],
-      startTime: new Date().toLocaleTimeString(),
-      employeeIds,
-      isActive: true
+    const createShiftAsync = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('shift_rosters')
+          .insert({
+            date: new Date().toISOString().split('T')[0],
+            start_time: new Date().toLocaleTimeString(),
+            location: '9540 Nall Avenue', // Default location
+            employee_ids: employeeIds,
+            is_active: true
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const newShift: ShiftRoster = {
+          id: data.id,
+          managerId: data.manager_id,
+          date: data.date,
+          startTime: data.start_time,
+          endTime: data.end_time,
+          employeeIds: data.employee_ids || [],
+          isActive: data.is_active
+        };
+
+        setActiveShift(newShift);
+      } catch (error) {
+        console.error('Error creating shift:', error);
+      }
     };
-    setActiveShift(newShift);
+
+    createShiftAsync();
   };
 
   const endShift = () => {
-    if (activeShift) {
-      setActiveShift({
-        ...activeShift,
-        endTime: new Date().toLocaleTimeString(),
-        isActive: false
-      });
-      setActiveShift(null);
-    }
+    const endShiftAsync = async () => {
+      if (activeShift) {
+        try {
+          const { error } = await supabase
+            .from('shift_rosters')
+            .update({
+              end_time: new Date().toLocaleTimeString(),
+              is_active: false
+            })
+            .eq('id', activeShift.id);
+
+          if (error) throw error;
+
+          setActiveShift(null);
+        } catch (error) {
+          console.error('Error ending shift:', error);
+        }
+      }
+    };
+
+    endShiftAsync();
   };
 
   const recordStepProgress = (progress: Omit<StepProgress, 'id' | 'date'>) => {
-    const newProgress: StepProgress = {
-      ...progress,
-      id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0]
-    };
-    setStepProgress(prev => [...prev, newProgress]);
+    const recordProgressAsync = async () => {
+      try {
+        // First, check if progress already exists for this step today
+        const today = new Date().toISOString().split('T')[0];
+        const { data: existingProgress, error: checkError } = await supabase
+          .from('step_progress')
+          .select('id')
+          .eq('development_goal_id', progress.developmentGoalId)
+          .eq('goal_step_id', progress.goalStepId)
+          .eq('employee_id', progress.employeeId)
+          .eq('shift_roster_id', progress.shiftRosterId)
+          .eq('date', today)
+          .single();
 
-    // Update consecutive correct count
-    updateGoalProgress(progress.developmentGoalId, progress.employeeId);
+        if (checkError && checkError.code !== 'PGRST116') {
+          throw checkError;
+        }
+
+        let data;
+        if (existingProgress) {
+          // Update existing progress
+          const { data: updateData, error: updateError } = await supabase
+            .from('step_progress')
+            .update({
+              outcome: progress.outcome,
+              notes: progress.notes
+            })
+            .eq('id', existingProgress.id)
+            .select()
+            .single();
+
+          if (updateError) throw updateError;
+          data = updateData;
+        } else {
+          // Insert new progress
+          const { data: insertData, error: insertError } = await supabase
+            .from('step_progress')
+            .insert({
+              development_goal_id: progress.developmentGoalId,
+              goal_step_id: progress.goalStepId,
+              employee_id: progress.employeeId,
+              shift_roster_id: progress.shiftRosterId,
+              date: today,
+              outcome: progress.outcome,
+              notes: progress.notes
+            })
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+          data = insertData;
+        }
+
+        const newProgress: StepProgress = {
+          id: data.id,
+          developmentGoalId: data.development_goal_id,
+          goalStepId: data.goal_step_id,
+          employeeId: data.employee_id,
+          shiftRosterId: data.shift_roster_id,
+          date: data.date,
+          outcome: data.outcome,
+          notes: data.notes
+        };
+
+        // Update local state
+        setStepProgress(prev => {
+          const filtered = prev.filter(p => 
+            !(p.developmentGoalId === progress.developmentGoalId &&
+              p.goalStepId === progress.goalStepId &&
+              p.employeeId === progress.employeeId &&
+              p.date === today)
+          );
+          return [...filtered, newProgress];
+        });
+
+        // Update consecutive correct count
+        updateGoalProgress(progress.developmentGoalId, progress.employeeId);
+      } catch (error) {
+        console.error('Error recording step progress:', error);
+      }
+    };
+
+    recordProgressAsync();
   };
 
   const saveShiftSummary = (employeeId: string, shiftId: string, summary: string) => {
-    const today = new Date().toISOString().split('T')[0];
-    const existingSummary = shiftSummaries.find(s => 
-      s.employeeId === employeeId && 
-      s.shiftRosterId === shiftId && 
-      s.date === today
-    );
+    const saveSummaryAsync = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Check if summary already exists
+        const { data: existingSummary, error: checkError } = await supabase
+          .from('shift_summaries')
+          .select('id')
+          .eq('employee_id', employeeId)
+          .eq('shift_roster_id', shiftId)
+          .eq('date', today)
+          .single();
 
-    if (existingSummary) {
-      // Update existing summary
-      setShiftSummaries(prev => prev.map(s => 
-        s.id === existingSummary.id 
-          ? { ...s, summary, updatedAt: new Date().toISOString() }
-          : s
-      ));
-    } else {
-      // Create new summary
-      const newSummary: ShiftSummary = {
-        id: Date.now().toString(),
-        employeeId,
-        shiftRosterId: shiftId,
-        date: today,
-        summary,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      setShiftSummaries(prev => [...prev, newSummary]);
-    }
+        if (checkError && checkError.code !== 'PGRST116') {
+          throw checkError;
+        }
+
+        let data;
+        if (existingSummary) {
+          // Update existing summary
+          const { data: updateData, error: updateError } = await supabase
+            .from('shift_summaries')
+            .update({ summary })
+            .eq('id', existingSummary.id)
+            .select()
+            .single();
+
+          if (updateError) throw updateError;
+          data = updateData;
+        } else {
+          // Create new summary
+          const { data: insertData, error: insertError } = await supabase
+            .from('shift_summaries')
+            .insert({
+              employee_id: employeeId,
+              shift_roster_id: shiftId,
+              date: today,
+              summary
+            })
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+          data = insertData;
+        }
+
+        const transformedSummary: ShiftSummary = {
+          id: data.id,
+          employeeId: data.employee_id,
+          shiftRosterId: data.shift_roster_id,
+          date: data.date,
+          summary: data.summary,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at
+        };
+
+        // Update local state
+        setShiftSummaries(prev => {
+          const filtered = prev.filter(s => 
+            !(s.employeeId === employeeId && 
+              s.shiftRosterId === shiftId && 
+              s.date === today)
+          );
+          return [...filtered, transformedSummary];
+        });
+      } catch (error) {
+        console.error('Error saving shift summary:', error);
+      }
+    };
+
+    saveSummaryAsync();
   };
 
   const updateGoalProgress = (goalId: string, employeeId: string) => {
-    const today = new Date().toISOString().split('T')[0];
-    const todayProgress = stepProgress.filter(p => 
-      p.developmentGoalId === goalId && 
-      p.employeeId === employeeId && 
-      p.date === today
-    );
+    const updateProgressAsync = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const todayProgress = stepProgress.filter(p => 
+          p.developmentGoalId === goalId && 
+          p.employeeId === employeeId && 
+          p.date === today
+        );
 
-    const goal = developmentGoals.find(g => g.id === goalId);
-    if (!goal) return;
+        const goal = developmentGoals.find(g => g.id === goalId);
+        if (!goal) return;
 
-    const requiredSteps = goal.steps.filter(s => s.isRequired);
-    const completedCorrectly = todayProgress.filter(p => p.outcome === 'correct').length;
-    const allCorrectToday = completedCorrectly === requiredSteps.length;
+        const requiredSteps = goal.steps.filter(s => s.isRequired);
+        const completedCorrectly = todayProgress.filter(p => p.outcome === 'correct').length;
+        const allCorrectToday = completedCorrectly === requiredSteps.length;
 
-    setDevelopmentGoals(prev => prev.map(g => {
-      if (g.id === goalId) {
-        const newConsecutive = allCorrectToday ? g.consecutiveAllCorrect + 1 : 0;
+        const newConsecutive = allCorrectToday ? goal.consecutiveAllCorrect + 1 : 0;
         const masteryAchieved = newConsecutive >= 3;
         
-        return {
-          ...g,
-          consecutiveAllCorrect: newConsecutive,
-          masteryAchieved,
-          masteryDate: masteryAchieved && !g.masteryAchieved ? today : g.masteryDate,
-          status: masteryAchieved ? 'maintenance' : g.status
+        const updates: any = {
+          consecutive_all_correct: newConsecutive,
+          mastery_achieved: masteryAchieved
         };
+
+        if (masteryAchieved && !goal.masteryAchieved) {
+          updates.mastery_date = today;
+          updates.status = 'maintenance';
+        }
+
+        const { error } = await supabase
+          .from('development_goals')
+          .update(updates)
+          .eq('id', goalId);
+
+        if (error) throw error;
+
+        // Update local state
+        setDevelopmentGoals(prev => prev.map(g => {
+          if (g.id === goalId) {
+            return {
+              ...g,
+              consecutiveAllCorrect: newConsecutive,
+              masteryAchieved,
+              masteryDate: masteryAchieved && !g.masteryAchieved ? today : g.masteryDate,
+              status: masteryAchieved ? 'maintenance' : g.status
+            };
+          }
+          return g;
+        }));
+      } catch (error) {
+        console.error('Error updating goal progress:', error);
       }
-      return g;
-    }));
+    };
+
+    updateProgressAsync();
   };
 
   const createGoalFromTemplate = (templateId: string, employeeId: string) => {
-    const template = goalTemplates.find(t => t.id === templateId);
-    if (!template) return;
+    const createGoalAsync = async () => {
+      try {
+        const template = goalTemplates.find(t => t.id === templateId);
+        if (!template) return;
 
-    const newGoal: DevelopmentGoal = {
-      id: Date.now().toString(),
-      employeeId,
-      title: template.name,
-      description: template.goalStatement,
-      startDate: new Date().toISOString().split('T')[0],
-      targetEndDate: template.defaultTargetDate,
-      status: 'active',
-      masteryAchieved: false,
-      consecutiveAllCorrect: 0,
-      steps: template.steps.map(step => ({
-        id: Date.now().toString() + step.id,
-        stepOrder: step.stepOrder,
-        stepDescription: step.stepDescription,
-        isRequired: step.isRequired
-      }))
+        // Create the goal
+        const { data: goalData, error: goalError } = await supabase
+          .from('development_goals')
+          .insert({
+            employee_id: employeeId,
+            title: template.name,
+            description: template.goalStatement,
+            start_date: new Date().toISOString().split('T')[0],
+            target_end_date: template.defaultTargetDate,
+            status: 'active',
+            mastery_achieved: false,
+            consecutive_all_correct: 0
+          })
+          .select()
+          .single();
+
+        if (goalError) throw goalError;
+
+        // Create the goal steps
+        const stepInserts = template.steps.map(step => ({
+          goal_id: goalData.id,
+          step_order: step.stepOrder,
+          step_description: step.stepDescription,
+          is_required: step.isRequired
+        }));
+
+        const { data: stepsData, error: stepsError } = await supabase
+          .from('goal_steps')
+          .insert(stepInserts)
+          .select();
+
+        if (stepsError) throw stepsError;
+
+        const newGoal: DevelopmentGoal = {
+          id: goalData.id,
+          employeeId: goalData.employee_id,
+          title: goalData.title,
+          description: goalData.description,
+          startDate: goalData.start_date,
+          targetEndDate: goalData.target_end_date,
+          status: goalData.status,
+          masteryAchieved: goalData.mastery_achieved,
+          consecutiveAllCorrect: goalData.consecutive_all_correct,
+          steps: stepsData.map(step => ({
+            id: step.id,
+            stepOrder: step.step_order,
+            stepDescription: step.step_description,
+            isRequired: step.is_required
+          }))
+        };
+
+        setDevelopmentGoals(prev => [...prev, newGoal]);
+      } catch (error) {
+        console.error('Error creating goal from template:', error);
+      }
     };
 
-    setDevelopmentGoals(prev => [...prev, newGoal]);
+    createGoalAsync();
   };
 
   const addGoalTemplate = (templateData: Omit<GoalTemplate, 'id'>) => {
-    const newTemplate: GoalTemplate = {
-      ...templateData,
-      id: Date.now().toString()
+    const addTemplateAsync = async () => {
+      try {
+        // Create the template
+        const { data: templateData_db, error: templateError } = await supabase
+          .from('goal_templates')
+          .insert({
+            name: templateData.name,
+            goal_statement: templateData.goalStatement,
+            default_mastery_criteria: templateData.defaultMasteryCriteria,
+            default_target_date: templateData.defaultTargetDate,
+            status: templateData.status
+          })
+          .select()
+          .single();
+
+        if (templateError) throw templateError;
+
+        // Create the template steps
+        const stepInserts = templateData.steps.map(step => ({
+          template_id: templateData_db.id,
+          step_order: step.stepOrder,
+          step_description: step.stepDescription,
+          is_required: step.isRequired
+        }));
+
+        const { data: stepsData, error: stepsError } = await supabase
+          .from('goal_template_steps')
+          .insert(stepInserts)
+          .select();
+
+        if (stepsError) throw stepsError;
+
+        const newTemplate: GoalTemplate = {
+          id: templateData_db.id,
+          name: templateData_db.name,
+          goalStatement: templateData_db.goal_statement,
+          defaultMasteryCriteria: templateData_db.default_mastery_criteria,
+          defaultTargetDate: templateData_db.default_target_date,
+          status: templateData_db.status,
+          steps: stepsData.map(step => ({
+            id: step.id,
+            stepOrder: step.step_order,
+            stepDescription: step.step_description,
+            isRequired: step.is_required
+          }))
+        };
+
+        setGoalTemplates(prev => [...prev, newTemplate]);
+      } catch (error) {
+        console.error('Error adding goal template:', error);
+      }
     };
-    setGoalTemplates(prev => [...prev, newTemplate]);
+
+    addTemplateAsync();
   };
 
   const updateGoal = (goalId: string, updates: Partial<DevelopmentGoal>) => {
-    setDevelopmentGoals(prev => prev.map(goal => 
-      goal.id === goalId 
-        ? { ...goal, ...updates }
-        : goal
-    ));
+    const updateGoalAsync = async () => {
+      try {
+        const { error } = await supabase
+          .from('development_goals')
+          .update({
+            title: updates.title,
+            description: updates.description,
+            target_end_date: updates.targetEndDate,
+            status: updates.status
+          })
+          .eq('id', goalId);
+
+        if (error) throw error;
+
+        setDevelopmentGoals(prev => prev.map(goal => 
+          goal.id === goalId 
+            ? { ...goal, ...updates }
+            : goal
+        ));
+      } catch (error) {
+        console.error('Error updating goal:', error);
+      }
+    };
+
+    updateGoalAsync();
   };
 
   const archiveGoal = (goalId: string) => {
-    setDevelopmentGoals(prev => prev.map(goal => 
-      goal.id === goalId 
-        ? { ...goal, status: 'archived' as const }
-        : goal
-    ));
+    const archiveGoalAsync = async () => {
+      try {
+        const { error } = await supabase
+          .from('development_goals')
+          .update({ status: 'archived' })
+          .eq('id', goalId);
+
+        if (error) throw error;
+
+        setDevelopmentGoals(prev => prev.map(goal => 
+          goal.id === goalId 
+            ? { ...goal, status: 'archived' as const }
+            : goal
+        ));
+      } catch (error) {
+        console.error('Error archiving goal:', error);
+      }
+    };
+
+    archiveGoalAsync();
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DataContext.Provider value={{

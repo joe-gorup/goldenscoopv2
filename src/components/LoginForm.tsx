@@ -93,6 +93,9 @@ export default function LoginForm() {
             <div>
               <strong>Manager:</strong> manager@goldenscoop.com / password
             </div>
+            <div className="mt-2 text-gray-500">
+              <strong>Note:</strong> You'll need to set up Supabase authentication first. Click "Connect to Supabase" in the top right.
+            </div>
           </div>
         </div>
       </div>
