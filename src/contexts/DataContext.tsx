@@ -125,13 +125,29 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       
+      // Check if Supabase is properly configured
+      if (!supabase.supabaseUrl || !supabase.supabaseKey) {
+        console.warn('Supabase not configured. Please connect to Supabase first.');
+        setLoading(false);
+        return;
+      }
+
       // Load employees
       const { data: employeesData, error: employeesError } = await supabase
         .from('employees')
         .select('*')
         .order('name');
 
-      if (employeesError) throw employeesError;
+      if (employeesError) {
+        console.error('Error loading employees:', employeesError);
+        // If tables don't exist, show a helpful message
+        if (employeesError.code === 'PGRST205') {
+          console.warn('Database tables not found. Please run the database migrations first.');
+          setLoading(false);
+          return;
+        }
+        throw employeesError;
+      }
 
       // Transform database data to match interface
       const transformedEmployees: Employee[] = employeesData.map(emp => ({
