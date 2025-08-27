@@ -283,28 +283,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         .from('shift_rosters')
         .select('*')
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (shiftError) {
-        if (shiftError.code !== 'PGRST116') {
-          throw shiftError;
-        }
-        // PGRST116 means no rows found, which is expected when no shift is active
+        throw shiftError;
+      }
+      
+      if (activeShiftData) {
+        const transformedShift: ShiftRoster = {
+          id: activeShiftData.id,
+          managerId: activeShiftData.manager_id,
+          date: activeShiftData.date,
+          startTime: activeShiftData.start_time,
+          endTime: activeShiftData.end_time,
+          employeeIds: activeShiftData.employee_ids || [],
+          isActive: activeShiftData.is_active
+        };
+        setActiveShift(transformedShift);
+      } else {
         setActiveShift(null);
-      } else if (activeShiftData) {
-
-        if (activeShiftData) {
-          const transformedShift: ShiftRoster = {
-            id: activeShiftData.id,
-            managerId: activeShiftData.manager_id,
-            date: activeShiftData.date,
-            startTime: activeShiftData.start_time,
-            endTime: activeShiftData.end_time,
-            employeeIds: activeShiftData.employee_ids || [],
-            isActive: activeShiftData.is_active
-          };
-          setActiveShift(transformedShift);
-        }
       }
 
     } catch (error) {
