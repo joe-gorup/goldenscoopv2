@@ -118,7 +118,7 @@ export default function LoginForm() {
               <strong>Manager:</strong> manager@goldenscoop.com / password
             </div>
             <div className="mt-2 text-gray-500">
-              <strong>Note:</strong> These users must exist in your Supabase project. Click "Connect to Supabase" in the top right, then create these users in the Authentication > Users section.
+              <strong>Note:</strong> These users must exist in your Supabase project. Click "Connect to Supabase" in the top right, then create these users in the Authentication &gt; Users section.
             </div>
           </div>
           
