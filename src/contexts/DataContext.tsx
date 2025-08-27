@@ -118,13 +118,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
+    // Add a timeout to prevent infinite loading
+    const loadTimeout = setTimeout(() => {
+      console.warn('Data loading timeout, falling back to demo data');
+      loadDemoData();
+      setLoading(false);
+    }, 5000);
+
+    loadData().finally(() => {
+      clearTimeout(loadTimeout);
+    });
+
+    return () => clearTimeout(loadTimeout);
   }, []);
 
   const loadData = async () => {
     try {
-      setLoading(true);
-      
       // Check if Supabase is properly configured with real values
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -132,7 +141,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
         console.warn('Supabase not configured properly. Using demo data.');
         loadDemoData();
-        setLoading(false);
         return;
       }
 
@@ -141,13 +149,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       console.error('Error loading data:', error);
       console.warn('Falling back to demo data');
       loadDemoData();
-    } finally {
-      setLoading(false);
     }
   };
 
   const loadSupabaseData = async () => {
     try {
+      console.log('Attempting to load data from Supabase...');
 
       // Load employees
       const { data: employeesData, error: employeesError } = await supabase
@@ -160,11 +167,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         // If tables don't exist, show a helpful message
         if (employeesError.code === 'PGRST205') {
           console.warn('Database tables not found. Please run the database migrations first.');
-          setLoading(false);
-          return;
+          throw new Error('Database tables not found');
         }
         throw employeesError;
       }
+
+      console.log('Successfully loaded employees from Supabase');
 
       // Transform database data to match interface
       const transformedEmployees: Employee[] = employeesData.map(emp => ({
@@ -321,12 +329,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setActiveShift(null);
       }
 
+      console.log('Successfully loaded all data from Supabase');
     } catch (error) {
+      console.error('Error in loadSupabaseData:', error);
       throw error; // Re-throw to be caught by loadData
     }
   };
 
   const loadDemoData = () => {
+    console.log('Loading demo data...');
     // Load demo employees
     const demoEmployees: Employee[] = [
       {
@@ -424,9 +435,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setStepProgress([]);
     setShiftSummaries([]);
     setActiveShift(null);
+    console.log('Demo data loaded successfully');
   };
 
   const addEmployee = (employeeData: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>) => {
+    // Check if we're in demo mode
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+      // Demo mode - just add to local state
+      const newEmployee: Employee = {
+        ...employeeData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      setEmployees(prev => [...prev, newEmployee]);
+      return;
+    }
+
     const addEmployeeAsync = async () => {
       try {
         const { data, error } = await supabase
@@ -472,6 +500,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateEmployee = (id: string, updates: Partial<Employee>) => {
+    // Check if we're in demo mode
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+      // Demo mode - just update local state
+      setEmployees(prev => prev.map(emp => 
+        emp.id === id 
+          ? { ...emp, ...updates, updatedAt: new Date().toISOString() }
+          : emp
+      ));
+      return;
+    }
+
     const updateEmployeeAsync = async () => {
       try {
         const { data, error } = await supabase
@@ -519,6 +561,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const createShift = (employeeIds: string[]) => {
+    // Check if we're in demo mode
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+      // Demo mode - create shift in local state
+      const newShift: ShiftRoster = {
+        id: Date.now().toString(),
+        managerId: 'demo-user',
+        date: new Date().toISOString().split('T')[0],
+        startTime: new Date().toLocaleTimeString(),
+        employeeIds,
+        isActive: true
+      };
+      setActiveShift(newShift);
+      return;
+    }
+
     const createShiftAsync = async () => {
       try {
         const { data, error } = await supabase
@@ -555,6 +615,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const endShift = () => {
+    // Check if we're in demo mode
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+      // Demo mode - just clear active shift
+      setActiveShift(null);
+      return;
+    }
+
     const endShiftAsync = async () => {
       if (activeShift) {
         try {
@@ -579,6 +649,34 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const recordStepProgress = (progress: Omit<StepProgress, 'id' | 'date'>) => {
+    // Check if we're in demo mode
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+      // Demo mode - add to local state
+      const today = new Date().toISOString().split('T')[0];
+      const newProgress: StepProgress = {
+        ...progress,
+        id: Date.now().toString(),
+        date: today
+      };
+      
+      setStepProgress(prev => {
+        const filtered = prev.filter(p => 
+          !(p.developmentGoalId === progress.developmentGoalId &&
+            p.goalStepId === progress.goalStepId &&
+            p.employeeId === progress.employeeId &&
+            p.date === today)
+        );
+        return [...filtered, newProgress];
+      });
+      
+      // Update goal progress in demo mode
+      updateGoalProgressDemo(progress.developmentGoalId, progress.employeeId);
+      return;
+    }
+
     const recordProgressAsync = async () => {
       try {
         // First, check if progress already exists for this step today
@@ -664,7 +762,67 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     recordProgressAsync();
   };
 
+  const updateGoalProgressDemo = (goalId: string, employeeId: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayProgress = stepProgress.filter(p => 
+      p.developmentGoalId === goalId && 
+      p.employeeId === employeeId && 
+      p.date === today
+    );
+
+    const goal = developmentGoals.find(g => g.id === goalId);
+    if (!goal) return;
+
+    const requiredSteps = goal.steps.filter(s => s.isRequired);
+    const completedCorrectly = todayProgress.filter(p => p.outcome === 'correct').length;
+    const allCorrectToday = completedCorrectly === requiredSteps.length;
+
+    const newConsecutive = allCorrectToday ? goal.consecutiveAllCorrect + 1 : 0;
+    const masteryAchieved = newConsecutive >= 3;
+    
+    setDevelopmentGoals(prev => prev.map(g => {
+      if (g.id === goalId) {
+        return {
+          ...g,
+          consecutiveAllCorrect: newConsecutive,
+          masteryAchieved,
+          masteryDate: masteryAchieved && !g.masteryAchieved ? today : g.masteryDate,
+          status: masteryAchieved ? 'maintenance' : g.status
+        };
+      }
+      return g;
+    }));
+  };
+
   const saveShiftSummary = (employeeId: string, shiftId: string, summary: string) => {
+    // Check if we're in demo mode
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+      // Demo mode - add to local state
+      const today = new Date().toISOString().split('T')[0];
+      const newSummary: ShiftSummary = {
+        id: Date.now().toString(),
+        employeeId,
+        shiftRosterId: shiftId,
+        date: today,
+        summary,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      setShiftSummaries(prev => {
+        const filtered = prev.filter(s => 
+          !(s.employeeId === employeeId && 
+            s.shiftRosterId === shiftId && 
+            s.date === today)
+        );
+        return [...filtered, newSummary];
+      });
+      return;
+    }
+
     const saveSummaryAsync = async () => {
       try {
         const today = new Date().toISOString().split('T')[0];
@@ -797,6 +955,37 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const createGoalFromTemplate = (templateId: string, employeeId: string) => {
+    // Check if we're in demo mode
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+      // Demo mode - add to local state
+      const template = goalTemplates.find(t => t.id === templateId);
+      if (!template) return;
+
+      const newGoal: DevelopmentGoal = {
+        id: Date.now().toString(),
+        employeeId,
+        title: template.name,
+        description: template.goalStatement,
+        startDate: new Date().toISOString().split('T')[0],
+        targetEndDate: template.defaultTargetDate,
+        status: 'active',
+        masteryAchieved: false,
+        consecutiveAllCorrect: 0,
+        steps: template.steps.map(step => ({
+          id: `${Date.now()}-${step.stepOrder}`,
+          stepOrder: step.stepOrder,
+          stepDescription: step.stepDescription,
+          isRequired: step.isRequired
+        }))
+      };
+
+      setDevelopmentGoals(prev => [...prev, newGoal]);
+      return;
+    }
+
     const createGoalAsync = async () => {
       try {
         const template = goalTemplates.find(t => t.id === templateId);
@@ -863,6 +1052,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addGoalTemplate = (templateData: Omit<GoalTemplate, 'id'>) => {
+    // Check if we're in demo mode
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+      // Demo mode - add to local state
+      const newTemplate: GoalTemplate = {
+        ...templateData,
+        id: Date.now().toString(),
+        steps: templateData.steps.map((step, index) => ({
+          ...step,
+          id: `${Date.now()}-${index}`
+        }))
+      };
+      setGoalTemplates(prev => [...prev, newTemplate]);
+      return;
+    }
+
     const addTemplateAsync = async () => {
       try {
         // Create the template
@@ -920,6 +1127,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateGoal = (goalId: string, updates: Partial<DevelopmentGoal>) => {
+    // Check if we're in demo mode
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+      // Demo mode - update local state
+      setDevelopmentGoals(prev => prev.map(goal => 
+        goal.id === goalId 
+          ? { ...goal, ...updates }
+          : goal
+      ));
+      return;
+    }
+
     const updateGoalAsync = async () => {
       try {
         const { error } = await supabase
@@ -948,6 +1169,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const archiveGoal = (goalId: string) => {
+    // Check if we're in demo mode
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+      // Demo mode - update local state
+      setDevelopmentGoals(prev => prev.map(goal => 
+        goal.id === goalId 
+          ? { ...goal, status: 'archived' as const }
+          : goal
+      ));
+      return;
+    }
+
     const archiveGoalAsync = async () => {
       try {
         const { error } = await supabase
@@ -970,12 +1205,30 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     archiveGoalAsync();
   };
 
-  if (loading) {
+  // Set loading to false after data is loaded
+  useEffect(() => {
+    if (employees.length > 0 || goalTemplates.length > 0) {
+      setLoading(false);
+    }
+  }, [employees, goalTemplates]);
+
+  // Show loading screen only for the first few seconds
+  const [showLoading, setShowLoading] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoading(false);
+      setLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading && showLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading data...</p>
+          <p className="text-gray-600">Loading Golden Scoop...</p>
+          <p className="text-sm text-gray-500 mt-2">Setting up demo data</p>
         </div>
       </div>
     );
