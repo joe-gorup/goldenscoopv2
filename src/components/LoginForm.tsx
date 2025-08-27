@@ -117,9 +117,6 @@ export default function LoginForm() {
             <div>
               <strong>Manager:</strong> manager@goldenscoop.com / password
             </div>
-            <div className="mt-2 text-blue-600">
-              <strong>Demo Mode:</strong> The app is running in demo mode with sample data. To use with real Supabase data, click "Connect to Supabase" in the top right and configure your project.
-            </div>
           </div>
         </div>
       </div>
