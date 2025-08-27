@@ -292,16 +292,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         // PGRST116 means no rows found, which is expected when no shift is active
         setActiveShift(null);
       } else if (activeShiftData) {
-        const transformedShift: ShiftRoster = {
-          id: activeShiftData.id,
-          managerId: activeShiftData.manager_id,
-          date: activeShiftData.date,
-          startTime: activeShiftData.start_time,
-          endTime: activeShiftData.end_time,
-          employeeIds: activeShiftData.employee_ids || [],
-          isActive: activeShiftData.is_active
-        };
-        setActiveShift(transformedShift);
+
+        if (activeShiftData) {
+          const transformedShift: ShiftRoster = {
+            id: activeShiftData.id,
+            managerId: activeShiftData.manager_id,
+            date: activeShiftData.date,
+            startTime: activeShiftData.start_time,
+            endTime: activeShiftData.end_time,
+            employeeIds: activeShiftData.employee_ids || [],
+            isActive: activeShiftData.is_active
+          };
+          setActiveShift(transformedShift);
+        }
       }
 
     } catch (error) {
