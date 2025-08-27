@@ -25,33 +25,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await loadUserProfile(session.user);
-        }
-      } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await loadUserProfile(session.user);
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    // Demo mode - no session checking needed
+    setLoading(false);
   }, []);
 
   const loadUserProfile = async (authUser: SupabaseUser) => {
@@ -89,51 +64,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Check if we're using demo/fallback Supabase config
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseKey || supabaseUrl === 'https://placeholder.supabase.co' || supabaseKey === 'placeholder-key') {
-        // Demo login for development
-        if (email === 'admin@goldenscoop.com' && password === 'password') {
-          setUser({
-            id: 'demo-admin',
-            email: 'admin@goldenscoop.com',
-            name: 'Demo Admin',
-            role: 'admin',
-            isActive: true
-          });
-          setIsAuthenticated(true);
-          return true;
-        } else if (email === 'manager@goldenscoop.com' && password === 'password') {
-          setUser({
-            id: 'demo-manager',
-            email: 'manager@goldenscoop.com',
-            name: 'Demo Manager',
-            role: 'shift_manager',
-            isActive: true
-          });
-          setIsAuthenticated(true);
-          return true;
-        }
-        return false;
-      }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        console.error('Login error:', error);
-        return false;
-      }
-
-      if (data.user) {
-        await loadUserProfile(data.user);
+      // Demo login for development
+      if (email === 'admin@goldenscoop.com' && password === 'password') {
+        setUser({
+          id: 'demo-admin',
+          email: 'admin@goldenscoop.com',
+          name: 'Demo Admin',
+          role: 'admin',
+          isActive: true
+        });
+        setIsAuthenticated(true);
+        return true;
+      } else if (email === 'manager@goldenscoop.com' && password === 'password') {
+        setUser({
+          id: 'demo-manager',
+          email: 'manager@goldenscoop.com',
+          name: 'Demo Manager',
+          role: 'shift_manager',
+          isActive: true
+        });
+        setIsAuthenticated(true);
         return true;
       }
-
       return false;
     } catch (error) {
       console.error('Login error:', error);
@@ -143,7 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut();
       setUser(null);
       setIsAuthenticated(false);
     } catch (error) {
