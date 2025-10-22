@@ -9,6 +9,7 @@ import UserManagement from './components/UserManagement';
 import ActiveShift from './components/ActiveShift';
 import GoalTemplates from './components/GoalTemplates';
 import Sidebar from './components/Sidebar';
+import AssessmentGoalSelector from './components/AssessmentGoalSelector';
 
 function AppContent() {
   const { user, isAuthenticated } = useAuth();
@@ -27,6 +28,8 @@ function AppContent() {
         return { title: 'User Management', description: 'Manage system users, roles, and access permissions' };
       case 'goal-templates':
         return { title: 'Goal Templates', description: 'Create and manage reusable goal templates for employee development' };
+      case 'assessment-mockups':
+        return { title: 'Assessment Goal Selection Mockups', description: 'UI options for handling partial goal documentation' };
       default:
         return { title: 'Start New Shift', description: 'Select employees who will be working this shift to begin documentation' };
     }
@@ -50,6 +53,8 @@ function AppContent() {
         return user?.role === 'admin' ? <UserManagement /> : <Dashboard />;
       case 'goal-templates':
         return user?.role === 'admin' ? <GoalTemplates /> : <Dashboard />;
+      case 'assessment-mockups':
+        return <AssessmentGoalSelector />;
       default:
         return <ActiveShift />;
     }

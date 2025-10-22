@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, Calendar, Target, Settings, LogOut, Menu, X, PanelLeft } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Target, Settings, LogOut, Menu, X, PanelLeft, ClipboardCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
@@ -17,7 +17,8 @@ export default function Sidebar({ activeSection, setActiveSection, collapsed, se
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'shift_manager'] },
     { id: 'employees', label: 'Employees', icon: Users, roles: ['admin', 'shift_manager'] },
     { id: 'users', label: 'User Management', icon: Settings, roles: ['admin'] },
-    { id: 'goal-templates', label: 'Goal Templates', icon: Target, roles: ['admin'] }
+    { id: 'goal-templates', label: 'Goal Templates', icon: Target, roles: ['admin'] },
+    { id: 'assessment-mockups', label: 'Assessment Mockups', icon: ClipboardCheck, roles: ['admin', 'shift_manager'] }
   ];
 
   const filteredMenuItems = menuItems.filter(item => 
