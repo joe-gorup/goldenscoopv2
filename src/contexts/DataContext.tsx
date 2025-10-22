@@ -72,6 +72,15 @@ export interface ShiftSummary {
   updatedAt: string;
 }
 
+export interface GoalAssessment {
+  id: string;
+  employeeId: string;
+  shiftRosterId: string;
+  goalId: string;
+  isIncluded: boolean;
+  date: string;
+}
+
 export interface GoalTemplate {
   id: string;
   name: string;
@@ -94,12 +103,14 @@ interface DataContextType {
   goalTemplates: GoalTemplate[];
   stepProgress: StepProgress[];
   shiftSummaries: ShiftSummary[];
+  goalAssessments: GoalAssessment[];
   addEmployee: (employee: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateEmployee: (id: string, updates: Partial<Employee>) => void;
   createShift: (employeeIds: string[]) => void;
   endShift: () => void;
   recordStepProgress: (progress: Omit<StepProgress, 'id' | 'date'>) => void;
   saveShiftSummary: (employeeId: string, shiftId: string, summary: string) => void;
+  setGoalAssessment: (employeeId: string, shiftId: string, goalId: string, isIncluded: boolean) => void;
   createGoalFromTemplate: (templateId: string, employeeId: string) => void;
   addGoalTemplate: (template: Omit<GoalTemplate, 'id'>) => void;
   updateGoal: (goalId: string, updates: Partial<DevelopmentGoal>) => void;
@@ -115,6 +126,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [goalTemplates, setGoalTemplates] = useState<GoalTemplate[]>([]);
   const [stepProgress, setStepProgress] = useState<StepProgress[]>([]);
   const [shiftSummaries, setShiftSummaries] = useState<ShiftSummary[]>([]);
+  const [goalAssessments, setGoalAssessments] = useState<GoalAssessment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -194,6 +206,34 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             isRequired: true
           }
         ]
+      },
+      {
+        id: '2',
+        name: 'Customer Greeting',
+        goalStatement: 'Employee will greet customers warmly and engage in friendly conversation',
+        defaultMasteryCriteria: '3 consecutive shifts with all required steps Correct',
+        defaultTargetDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: 'active',
+        steps: [
+          {
+            id: '1',
+            stepOrder: 1,
+            stepDescription: 'Make eye contact and smile at customer',
+            isRequired: true
+          },
+          {
+            id: '2',
+            stepOrder: 2,
+            stepDescription: 'Use greeting phrase',
+            isRequired: true
+          },
+          {
+            id: '3',
+            stepOrder: 3,
+            stepDescription: 'Ask how they can help',
+            isRequired: true
+          }
+        ]
       }
     ];
 
@@ -211,15 +251,102 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         consecutiveAllCorrect: 1,
         steps: [
           {
-            id: '1',
+            id: 'goal1-step1',
             stepOrder: 1,
             stepDescription: 'Name all available ice cream flavors',
             isRequired: true
           },
           {
-            id: '2',
+            id: 'goal1-step2',
             stepOrder: 2,
             stepDescription: 'Identify ingredients in each flavor',
+            isRequired: true
+          }
+        ]
+      },
+      {
+        id: '2',
+        employeeId: '1',
+        title: 'Customer Greeting',
+        description: 'Greet customers warmly and engage in friendly conversation',
+        startDate: '2024-01-15',
+        targetEndDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: 'active',
+        masteryAchieved: false,
+        consecutiveAllCorrect: 0,
+        steps: [
+          {
+            id: 'goal2-step1',
+            stepOrder: 1,
+            stepDescription: 'Make eye contact and smile at customer',
+            isRequired: true
+          },
+          {
+            id: 'goal2-step2',
+            stepOrder: 2,
+            stepDescription: 'Use greeting phrase',
+            isRequired: true
+          },
+          {
+            id: 'goal2-step3',
+            stepOrder: 3,
+            stepDescription: 'Ask how they can help',
+            isRequired: true
+          }
+        ]
+      },
+      {
+        id: '3',
+        employeeId: '2',
+        title: 'Ice Cream Flavors Knowledge',
+        description: 'Learn all ice cream flavors and their ingredients',
+        startDate: '2024-01-20',
+        targetEndDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: 'active',
+        masteryAchieved: false,
+        consecutiveAllCorrect: 2,
+        steps: [
+          {
+            id: 'goal3-step1',
+            stepOrder: 1,
+            stepDescription: 'Name all available ice cream flavors',
+            isRequired: true
+          },
+          {
+            id: 'goal3-step2',
+            stepOrder: 2,
+            stepDescription: 'Identify ingredients in each flavor',
+            isRequired: true
+          }
+        ]
+      },
+      {
+        id: '4',
+        employeeId: '2',
+        title: 'Customer Greeting',
+        description: 'Greet customers warmly and engage in friendly conversation',
+        startDate: '2024-01-20',
+        targetEndDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: 'active',
+        masteryAchieved: false,
+        consecutiveAllCorrect: 1,
+        steps: [
+          {
+            id: 'goal4-step1',
+            stepOrder: 1,
+            stepDescription: 'Make eye contact and smile at customer',
+            isRequired: true
+          },
+          {
+            id: 'goal4-step2',
+            stepOrder: 2,
+            stepDescription: 'Use greeting phrase',
+            isRequired: true
+          },
+          {
+            id: 'goal4-step3',
+            stepOrder: 3,
+            stepDescription: 'Ask how they can help',
             isRequired: true
           }
         ]
@@ -298,9 +425,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const updateGoalProgressDemo = (goalId: string, employeeId: string) => {
     const today = new Date().toISOString().split('T')[0];
-    const todayProgress = stepProgress.filter(p => 
-      p.developmentGoalId === goalId && 
-      p.employeeId === employeeId && 
+
+    if (!activeShift) return;
+
+    const goalAssessment = goalAssessments.find(a =>
+      a.goalId === goalId &&
+      a.employeeId === employeeId &&
+      a.shiftRosterId === activeShift.id &&
+      a.date === today
+    );
+
+    if (goalAssessment && !goalAssessment.isIncluded) {
+      return;
+    }
+
+    const todayProgress = stepProgress.filter(p =>
+      p.developmentGoalId === goalId &&
+      p.employeeId === employeeId &&
       p.date === today
     );
 
@@ -313,7 +454,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const newConsecutive = allCorrectToday ? goal.consecutiveAllCorrect + 1 : 0;
     const masteryAchieved = newConsecutive >= 3;
-    
+
     setDevelopmentGoals(prev => prev.map(g => {
       if (g.id === goalId) {
         return {
@@ -530,11 +671,32 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const archiveGoal = (goalId: string) => {
     // Demo mode - update local state
-    setDevelopmentGoals(prev => prev.map(goal => 
-      goal.id === goalId 
+    setDevelopmentGoals(prev => prev.map(goal =>
+      goal.id === goalId
         ? { ...goal, status: 'archived' as const }
         : goal
     ));
+  };
+
+  const setGoalAssessment = (employeeId: string, shiftId: string, goalId: string, isIncluded: boolean) => {
+    const today = new Date().toISOString().split('T')[0];
+    const newAssessment: GoalAssessment = {
+      id: `${employeeId}-${shiftId}-${goalId}`,
+      employeeId,
+      shiftRosterId: shiftId,
+      goalId,
+      isIncluded,
+      date: today
+    };
+
+    setGoalAssessments(prev => {
+      const filtered = prev.filter(a =>
+        !(a.employeeId === employeeId &&
+          a.shiftRosterId === shiftId &&
+          a.goalId === goalId)
+      );
+      return [...filtered, newAssessment];
+    });
   };
 
   // Set loading to false after data is loaded
@@ -574,12 +736,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       goalTemplates,
       stepProgress,
       shiftSummaries,
+      goalAssessments,
       addEmployee,
       updateEmployee,
       createShift,
       endShift,
       recordStepProgress,
       saveShiftSummary,
+      setGoalAssessment,
       createGoalFromTemplate,
       addGoalTemplate,
       updateGoal,

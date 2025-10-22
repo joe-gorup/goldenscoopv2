@@ -81,17 +81,47 @@ interface EmployeeProgressProps {
 }
 
 export default function EmployeeProgress({ employee, shiftId, onViewProfile }: EmployeeProgressProps) {
-  const { developmentGoals, stepProgress, recordStepProgress, shiftSummaries, saveShiftSummary } = useData();
+  const { developmentGoals, stepProgress, recordStepProgress, shiftSummaries, saveShiftSummary, goalAssessments, setGoalAssessment } = useData();
   const [outcomes, setOutcomes] = useState<Record<string, { outcome: 'correct' | 'verbal_prompt' | 'na'; notes: string }>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [showNotes, setShowNotes] = useState<Record<string, boolean>>({});
   const [showSupportDetails, setShowSupportDetails] = useState(false);
   const [shiftSummary, setShiftSummary] = useState('');
   const [summaryLoading, setSummaryLoading] = useState(false);
-  
-  const employeeGoals = developmentGoals.filter(goal => 
+
+  const employeeGoals = developmentGoals.filter(goal =>
     goal.employeeId === employee.id && goal.status === 'active'
   );
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const [includedGoals, setIncludedGoals] = useState<Set<string>>(() => {
+    const initialIncluded = new Set<string>();
+    employeeGoals.forEach(goal => {
+      const existing = goalAssessments.find(a =>
+        a.goalId === goal.id &&
+        a.employeeId === employee.id &&
+        a.shiftRosterId === shiftId &&
+        a.date === today
+      );
+      if (existing === undefined || existing.isIncluded) {
+        initialIncluded.add(goal.id);
+      }
+    });
+    return initialIncluded;
+  });
+
+  const toggleGoalInclusion = (goalId: string) => {
+    const newIncluded = new Set(includedGoals);
+    if (newIncluded.has(goalId)) {
+      newIncluded.delete(goalId);
+      setGoalAssessment(employee.id, shiftId, goalId, false);
+    } else {
+      newIncluded.add(goalId);
+      setGoalAssessment(employee.id, shiftId, goalId, true);
+    }
+    setIncludedGoals(newIncluded);
+  };
   
   // On active shifts, expand goals by default
   const [expandedGoals, setExpandedGoals] = useState<Record<string, boolean>>(() => {
@@ -109,7 +139,6 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
     }));
   };
 
-  const today = new Date().toISOString().split('T')[0];
   const todayProgress = stepProgress.filter(p => 
     p.employeeId === employee.id && 
     p.date === today &&
@@ -385,23 +414,84 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
       {/* Development Goals */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center space-x-2">
-            <Target className="h-5 w-5 text-blue-500" />
-            <h2 className="text-lg font-semibold text-gray-900">Development Goals</h2>
-            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-              {employeeGoals.length}
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Target className="h-5 w-5 text-blue-500" />
+              <h2 className="text-lg font-semibold text-gray-900">Development Goals</h2>
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                {employeeGoals.length}
+              </span>
+            </div>
+            <div className="text-sm text-gray-600">
+              <span className="font-medium text-green-600">{includedGoals.size}</span> of {employeeGoals.length} included in assessment
+            </div>
           </div>
         </div>
+
+        {employeeGoals.length > 1 && (
+          <div className="border-b border-gray-200 px-6 py-4 bg-blue-50">
+            <div className="flex items-start space-x-3">
+              <div className="h-5 w-5 rounded-full bg-blue-600 flex items-center justify-center mt-0.5 flex-shrink-0">
+                <span className="text-white text-xs font-bold">i</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-blue-900 font-medium mb-1">
+                  Select which goals to assess today
+                </p>
+                <p className="text-sm text-blue-700">
+                  You can choose to document only some goals. Excluded goals won't affect their mastery progress.
+                  Use the toggle on each goal to include or exclude it from today's assessment.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="p-6">
           <div className="space-y-8">
             {employeeGoals.length > 0 ? (
               employeeGoals.map((goal) => {
                 const progress = getGoalProgress(goal);
-                
+                const isIncluded = includedGoals.has(goal.id);
+
                 return (
-                  <div key={goal.id} className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                  <div
+                    key={goal.id}
+                    className={`border rounded-lg p-6 transition-all ${
+                      isIncluded
+                        ? 'border-green-200 bg-green-50'
+                        : 'border-gray-300 bg-gray-100 opacity-75'
+                    }`}
+                  >
+                    {employeeGoals.length > 1 && (
+                      <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-300">
+                        <div className="flex items-center space-x-3">
+                          <button
+                            onClick={() => toggleGoalInclusion(goal.id)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              isIncluded ? 'bg-green-600' : 'bg-gray-400'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                isIncluded ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                          <span className={`text-sm font-medium ${
+                            isIncluded ? 'text-green-800' : 'text-gray-600'
+                          }`}>
+                            {isIncluded ? 'Included in Assessment' : 'Excluded from Assessment'}
+                          </span>
+                        </div>
+                        {!isIncluded && (
+                          <span className="text-xs text-gray-600 italic">
+                            Not counted toward mastery today
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">{goal.title}</h3>
@@ -446,33 +536,34 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
                     </div>
 
                     {/* Goal Steps - Collapsible */}
-                    <div className="space-y-4">
-                      <div>
-                        <button
-                          onClick={() => toggleGoalExpansion(goal.id)}
-                          className="flex items-center space-x-2 text-left w-full hover:bg-white p-2 rounded-lg transition-colors"
-                        >
-                          {expandedGoals[goal.id] ? (
-                            <ChevronDown className="h-4 w-4 text-gray-500" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-gray-500" />
-                          )}
-                          <h4 className="font-medium text-gray-900">Steps ({goal.steps.length}) - Click to expand</h4>
-                        </button>
-                        
-                        {expandedGoals[goal.id] && (
-                          <div className="mt-4 space-y-4 border-t border-gray-200 pt-4">
-                            {goal.steps.map((step: any, stepIndex: number) => {
-                              const stepKey = step.id;
-                              const stepProgress = outcomes[stepKey];
-                              const isSaving = saving[stepKey];
-                              const hasNotes = showNotes[stepKey];
-                              
-                              return (
-                                <div
-                                  key={step.id}
-                                  className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm"
-                                >
+                    {isIncluded ? (
+                      <div className="space-y-4">
+                        <div>
+                          <button
+                            onClick={() => toggleGoalExpansion(goal.id)}
+                            className="flex items-center space-x-2 text-left w-full hover:bg-white p-2 rounded-lg transition-colors"
+                          >
+                            {expandedGoals[goal.id] ? (
+                              <ChevronDown className="h-4 w-4 text-gray-500" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-gray-500" />
+                            )}
+                            <h4 className="font-medium text-gray-900">Steps ({goal.steps.length}) - Click to expand</h4>
+                          </button>
+
+                          {expandedGoals[goal.id] && (
+                            <div className="mt-4 space-y-4 border-t border-gray-200 pt-4">
+                              {goal.steps.map((step: any, stepIndex: number) => {
+                                const stepKey = step.id;
+                                const stepProgress = outcomes[stepKey];
+                                const isSaving = saving[stepKey];
+                                const hasNotes = showNotes[stepKey];
+
+                                return (
+                                  <div
+                                    key={step.id}
+                                    className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm"
+                                  >
                                   <div className="flex items-start justify-between mb-3">
                                     <div className="flex-1">
                                       <div className="flex items-center space-x-2 mb-2">
@@ -537,6 +628,13 @@ export default function EmployeeProgress({ employee, shiftId, onViewProfile }: E
                         )}
                       </div>
                     </div>
+                    ) : (
+                      <div className="mt-4 p-4 bg-gray-100 border border-gray-300 rounded-lg">
+                        <p className="text-sm text-gray-600 text-center">
+                          This goal is excluded from today's assessment. Toggle the switch above to include it.
+                        </p>
+                      </div>
+                    )}
 
                     {/* Mastery Status */}
                     {goal.consecutiveAllCorrect >= 2 && (
